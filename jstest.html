@@ -116,6 +116,9 @@
 
         return function() {
             var out = $('#zta_output').html('');
+            var js1 = $('.zta_test #zta1').val();
+            var js2 = $('.zta_test #zta2').val();
+
             try {
                 eval($('.zta_test #preExec').val());
             }
@@ -125,8 +128,26 @@
                 return;
             }
 
-            var js1 = eval('(function() {' + $('.zta_test #zta1').val() + '})');
-            var js2 = eval('(function() {' + $('.zta_test #zta2').val() + '})');
+            try {
+                js1 = eval('(function() {' + js1 + '})');
+            }
+            catch(e) {
+                out.append('<div>Error: Failed to evaluate script 1. See console for exception.</div>');
+                console.error(e);
+                return;
+            }
+
+            try {
+                js2 = eval('(function() {' + js2 + '})');
+            }
+            catch(e) {
+                out.append('<div>Error: Failed to evaluate script 2. See console for exception.</div>');
+                console.error(e);
+                return;
+            }
+
+
+
             var count1, count2, overhead1, overhead2, t1, t2;
             out.append('<div>Calibrating...</div>');
             flushQueue()
