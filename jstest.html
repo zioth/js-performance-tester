@@ -1,0 +1,155 @@
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<style>
+    .zta_test {
+        box-sizing: border-box;
+        width: 95%;
+    }
+    .zta_test * {
+        box-sizing: border-box;
+    }
+    .zta_boxes {
+        overflow: hidden;
+        width: 103%;
+    }
+    .zta_test textarea {
+        height: 200px;
+        font-family: "Courier New", monospace;
+        padding: 12px;
+        line-height: 1.5em;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+    .zta_test #preExec {
+        width: 100%;
+        margin: 1.5%;
+    }
+    .zta_test #zta1 {
+        width: 47%;
+        margin: 0 1.5%;
+        float: left;
+    }
+    .zta_test #zta2 {
+        width: 47%;
+        margin: 0 1.5%;
+        float: right;
+    }
+    .zta_test button {
+        display: block;
+        margin: 30px auto;
+        font-size: 16px;
+        background: #fff;
+        border-radius: 4px;
+        padding: 12px 30px;
+    }
+</style>
+
+<div class="zta_test">
+    <textarea id="preExec" placeholder="Execute this code before the test"></textarea>
+
+    <div class="zta_boxes">
+        <textarea id="zta1" placeholder="First Script"></textarea>
+        <textarea id="zta2" placeholder="Second Script"></textarea>
+    </div>
+
+    <button onclick="jsCompare()">Run</button>
+    <div id="zta_output"></div>
+</div>
+
+<script>
+    var jsCompare = (function($) {
+        function run(js, count) {
+            for (var x=0; x<count; x++) {
+                js();
+            }
+        }
+
+        function calculateOverhead(count) {
+            var f = function() {};
+            return timeIt(function() {
+                for (var x = 0; x < count; x++) {
+                    f();
+                }
+            });
+        }
+
+        function calibrate(js) {
+            var t = 0, count;
+            for (count = 1; t < 1000 && count < 1000000000; count *= 2) {
+                t = timeIt(run.bind(null, js, count));
+            }
+            return count;
+        }
+
+        function timeIt(js) {
+            var start = performance.now();
+            js();
+            return performance.now() - start;
+        }
+
+        function flushQueue() {
+            return new Promise(function(resolve) {
+                setTimeout(resolve, 1);
+            });
+        }
+
+        function formatDuration(ms) {
+            var val, unit;
+            if (ms < 1) {
+                val = ms * 1000;
+                unit = '&#181;s';
+            }
+            else if (ms < 1000) {
+                val = ms;
+                unit = 'ms';
+            }
+            else {
+                val = ms / 1000;
+                unit = 's';
+            }
+            return Math.floor(val * 1000)/1000 + unit;
+        }
+
+        function formatNum(n) {
+            return (''+n).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+        }
+
+        return function() {
+            var out = $('#zta_output').html('');
+            try {
+                eval($('.zta_test #preExec').val());
+            }
+            catch(e) {
+                out.append('<div>Error: Pre-execution script failed. See console for exception.</div>');
+                console.error(e);
+                return;
+            }
+
+            var js1 = eval('(function() {' + $('.zta_test #zta1').val() + '})');
+            var js2 = eval('(function() {' + $('.zta_test #zta2').val() + '})');
+            var count1, count2, overhead1, overhead2, t1, t2;
+            out.append('<div>Calibrating...</div>');
+            flushQueue()
+                .then(function() {
+                    count1 = calibrate(js1);
+                    count2 = calibrate(js2);
+                    overhead1 = calculateOverhead(count1);
+                    overhead2 = calculateOverhead(count2);
+
+                    out.append('<div>Running first script...</div>');
+                })
+                .then(flushQueue)
+                .then(function() {
+                    t1 = timeIt(run.bind(window, js1, count1)) - overhead1;
+                    out.append('<div>Ran ' + formatNum(count1) + ' times in ' + formatDuration(t1) + '. ' + formatDuration(t1 / count1 * 1000) + ' per run</div>');
+                    out.append('<div>Running second script...</div>');
+                })
+                .then(flushQueue)
+                .then(function() {
+                    t2 = timeIt(run.bind(window, js2, count2)) - overhead2;
+                    out.append('<div>Ran ' + formatNum(count2) + ' times in ' + formatDuration(t2) + '. ' + formatDuration(t2 / count2 * 1000) + ' per run</div>');
+                });
+        }
+    })(jQuery);
+</script>
+</html>
