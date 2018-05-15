@@ -52,18 +52,30 @@
         <textarea id="zta2" placeholder="Second Script"></textarea>
     </div>
 
-    <button onclick="jsCompare()">Run</button>
+    <button onclick="zta_jsCompare()">Run</button>
     <div id="zta_output"></div>
 </div>
 
 <script>
-    var jsCompare = (function($) {
+    var zta_jsCompare = (function($) {
+        /**
+         * Run a function a bunch of times.
+         *
+         * @param {Function} js - The function to run
+         * @param {int} count - The number of times to run it
+         */
         function run(js, count) {
             for (var x=0; x<count; x++) {
                 js();
             }
         }
 
+
+        /**
+         * Calculate the overhead of looping over a function, so it can be subtracted from the final timing.
+         *
+         * @param {int} count - The number of times to iterate
+         */
         function calculateOverhead(count) {
             var f = function() {};
             return timeIt(function() {
@@ -73,6 +85,13 @@
             });
         }
 
+
+        /**
+         * Figure out how many times you can run a function in around a second.
+         *
+         * @param {Function} js - The function to run
+         * @returns {int} The number of times it was run
+         */
         function calibrate(js) {
             var t = 0, count;
             for (count = 1; t < 1000 && count < 1000000000; count *= 2) {
@@ -81,18 +100,38 @@
             return count;
         }
 
+
+        /**
+         * Time some code.
+         *
+         * @param {Function} js - The function to run
+         * @returns {number} time time it took, in ms
+         */
         function timeIt(js) {
             var start = performance.now();
             js();
             return performance.now() - start;
         }
 
+
+        /**
+         * Create a promise to flush the browser's event pipe, allowing for interruptions such as page redraws.
+         *
+         * @returns {Promise}
+         */
         function flushQueue() {
             return new Promise(function(resolve) {
                 setTimeout(resolve, 1);
             });
         }
 
+
+        /**
+         * Format a duration with a unit such that the number to the right of the decimal is small but non-zero.
+         *
+         * @param {number} ms - The number of miliseconds
+         * @returns {String} a formatted string
+         */
         function formatDuration(ms) {
             var val, unit;
             if (ms < 1) {
@@ -110,15 +149,27 @@
             return Math.floor(val * 1000)/1000 + unit;
         }
 
+
+        /**
+         * Format a number with commas. Yeah, it's not internationalization-friendly.
+         *
+         * @param {int} n - The number to format
+         * @returns {string} the formatted number
+         */
         function formatNum(n) {
             return (''+n).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
         }
 
+
+        /**
+         * Exported function.
+         */
         return function() {
             var out = $('#zta_output').html('');
             var js1 = $('.zta_test #zta1').val();
             var js2 = $('.zta_test #zta2').val();
 
+            // Validation
             try {
                 eval($('.zta_test #preExec').val());
             }
@@ -128,6 +179,7 @@
                 return;
             }
 
+            // Validation
             try {
                 js1 = eval('(function() {' + js1 + '})');
             }
@@ -137,6 +189,7 @@
                 return;
             }
 
+            // Validation
             try {
                 js2 = eval('(function() {' + js2 + '})');
             }
@@ -147,7 +200,7 @@
             }
 
 
-
+            // Do the test!
             var count1, count2, overhead1, overhead2, t1, t2;
             out.append('<div>Calibrating...</div>');
             flushQueue()
