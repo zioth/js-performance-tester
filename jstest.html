@@ -4,13 +4,13 @@
     .zta_test {
         box-sizing: border-box;
         width: 95%;
+        margin: 0 auto;
     }
     .zta_test * {
         box-sizing: border-box;
     }
     .zta_boxes {
-        overflow: hidden;
-        width: 103%;
+        display: flex;
     }
     .zta_test textarea {
         height: 200px;
@@ -22,17 +22,14 @@
     }
     .zta_test #preExec {
         width: 100%;
-        margin: 1.5%;
+        margin: 20px 0;
     }
     .zta_test #zta1 {
-        width: 47%;
-        margin: 0 1.5%;
-        float: left;
+        flex-grow: 1;
+        margin-right: 1.5%;
     }
     .zta_test #zta2 {
-        width: 47%;
-        margin: 0 1.5%;
-        float: right;
+        flex-grow: 1;
     }
     .zta_test button {
         display: block;
